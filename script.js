@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('submitRsvp').onclick = function(event) {
         event.stopPropagation();
         const name = document.getElementById('guestName').value.trim();
+        const number = document.getElementById('guestNumber').value.trim();
+        const email = document.getElementById('guestEmail').value.trim();
         const selectedDate = document.querySelector('input[name="dateOption"]:checked').value;
 
         if (!name) {
@@ -25,40 +27,58 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        let responses = JSON.parse(localStorage.getItem('gradResponses') || '[]');
+        const response = {
+            name: name,
+            number: number,
+            email: email,
+            date: selectedDate,
+            timestamp: Date.now()
+        };
 
+        // Send to Google Sheets
+        fetch('https://script.google.com/macros/s/AKfycbxkqUUPOA2djtaZTQR1HO2dP_DpOipQngxggYPovangh0F6HMd04Z3JDuMCOvO_W_wb/exec', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(response)
+        })
+        .then(() => {
+            // Also save locally
+            let responses = JSON.parse(localStorage.getItem('gradResponses') || '[]');
+            
             if (responses.some(r => r.name.toLowerCase() === name.toLowerCase())) {
                 alert('You have already submitted an RSVP!');
                 return;
             }
 
-            const response = {
-                name: name,
-                date: selectedDate,
-                timestamp: Date.now()
-            };
-
             responses.push(response);
             localStorage.setItem('gradResponses', JSON.stringify(responses));
-        
-        
-        document.getElementById('successMessage').style.display = 'block';
-        setTimeout(() => {
-            document.getElementById('successMessage').style.display = 'none';
-        }, 3000);
+            
+            document.getElementById('successMessage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('successMessage').style.display = 'none';
+            }, 3000);
 
-        document.getElementById('guestName').value = '';
-        document.getElementById('dec18').checked = true;
+            document.getElementById('guestName').value = '';
+            document.getElementById('guestNumber').value = '';
+            document.getElementById('guestEmail').value = '';
+            document.getElementById('dec18').checked = true;
 
-        loadResponses();
-        document.getElementById('responseSection').style.display = 'block';
+            loadResponses();
+            document.getElementById('responseSection').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error submitting RSVP. Please try again.');
+        });
     };
 
-    // PASSWORD-PROTECTED VIEW RESPONSES - Keep only this one!
+    // PASSWORD-PROTECTED VIEW RESPONSES
     document.getElementById('viewResponses').onclick = function(event) {
         event.stopPropagation();
         
-        // Prompt for password
         const password = prompt('Enter admin password to view responses:');
         
         if (password === ADMIN_PASSWORD) {
@@ -97,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.className = 'responseItem';
                 item.innerHTML = `
                     <span class="responseName">${response.name}</span>
-                    <span class="responseDate">${response.date === 'dec18' ? 'Dec 18' : 'Alt Date'}</span>
+                    <span class="responseDate">${response.date === 'dec18' ? 'Dec 18' : 'Dec 14'}</span>
                 `;
                 responseList.appendChild(item);
             });

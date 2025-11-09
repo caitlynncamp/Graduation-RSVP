@@ -1,11 +1,10 @@
-document.addEventListener('DOMContentLoaded', function() {
+javascriptdocument.addEventListener('DOMContentLoaded', function() {
 
     const ADMIN_PASSWORD = "ADMINPass_2025";
     
     document.getElementById('messengerIcon').onclick = function(event) {
         event.stopPropagation();
         document.getElementById('invitePopup').classList.add('visible');
-        loadResponses();
     };
 
     document.getElementById('closePopup').onclick = function(event) {
@@ -27,12 +26,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Check for duplicate locally first
+        let responses = JSON.parse(localStorage.getItem('gradResponses') || '[]');
+        
+        if (responses.some(r => r.name.toLowerCase() === name.toLowerCase())) {
+            alert('You have already submitted an RSVP!');
+            return;
+        }
+
         const response = {
             name: name,
             number: number,
             email: email,
             date: selectedDate,
-            timestamp: Date.now()
+            timestamp: new Date().toISOString()
         };
 
         // Send to Google Sheets
@@ -45,29 +52,21 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify(response)
         })
         .then(() => {
-            // Also save locally
-            let responses = JSON.parse(localStorage.getItem('gradResponses') || '[]');
-            
-            if (responses.some(r => r.name.toLowerCase() === name.toLowerCase())) {
-                alert('You have already submitted an RSVP!');
-                return;
-            }
-
+            // Save locally
             responses.push(response);
             localStorage.setItem('gradResponses', JSON.stringify(responses));
             
+            // Show success message
             document.getElementById('successMessage').style.display = 'block';
             setTimeout(() => {
                 document.getElementById('successMessage').style.display = 'none';
             }, 3000);
 
+            // Clear form
             document.getElementById('guestName').value = '';
             document.getElementById('guestNumber').value = '';
             document.getElementById('guestEmail').value = '';
             document.getElementById('dec18').checked = true;
-
-            loadResponses();
-            document.getElementById('responseSection').style.display = 'block';
         })
         .catch(error => {
             console.error('Error:', error);
@@ -109,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (responses.length === 0) {
             responseList.innerHTML = '<p style="text-align: center; color: #666;">No responses yet</p>';
         } else {
-            responses.sort((a, b) => b.timestamp - a.timestamp);
+            responses.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             const recentResponses = responses.slice(0, 10);
 
             recentResponses.forEach(response => {
@@ -124,10 +123,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
-
-
-//Deployment ID
-//AKfycbxkqUUPOA2djtaZTQR1HO2dP_DpOipQngxggYPovangh0F6HMd04Z3JDuMCOvO_W_wb
-//Web app
-//URL
-//https://script.google.com/macros/s/AKfycbxkqUUPOA2djtaZTQR1HO2dP_DpOipQngxggYPovangh0F6HMd04Z3JDuMCOvO_W_wb/exec

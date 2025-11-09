@@ -1,4 +1,4 @@
-javascriptdocument.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
 
     const ADMIN_PASSWORD = "ADMINPass_2025";
     
